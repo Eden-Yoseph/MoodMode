@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emotion-Aware AI Chat</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -546,9 +544,17 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
+    <script>
+        // Check if React loaded properly
+        if (typeof React === 'undefined') {
+            document.body.innerHTML = '<div style="padding: 20px; font-family: Arial; color: red; text-align: center;"><h2>Loading React...</h2><p>If this message persists, there may be a network issue. Please refresh the page.</p></div>';
+            console.error('React failed to load from CDN');
+        } else {
+            console.log('React loaded successfully');
+        }
+
         // Import React hooks
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, createElement: e } = React;
 
         // Configuration Constants
         const MOODS = [
@@ -711,7 +717,7 @@
                     ],
                     
                     silent: [
-                        'I'm here with you.',
+                        'I\'m here with you.',
                         'Sitting with you in this moment.',
                         'I hear you.',
                         '...',
@@ -1137,192 +1143,187 @@
                 }
             };
 
-            return (
-                <div className="app-container">
-                    <div className="header">
-                        <h1>🌟 Emotion-Aware AI Chat</h1>
-                        <p>Adaptive AI that responds to your emotional needs</p>
-                    </div>
+            return e('div', { className: 'app-container' }, [
+                e('div', { className: 'header', key: 'header' }, [
+                    e('h1', { key: 'title' }, '🌟 Emotion-Aware AI Chat'),
+                    e('p', { key: 'subtitle' }, 'Adaptive AI that responds to your emotional needs')
+                ]),
 
-                    <div className="controls">
-                        <div className="control-group">
-                            <label>
-                                <span className="mood-icon">{MOODS.find(m => m.value === mood)?.icon}</span>
-                                Current Mood
-                            </label>
-                            <select 
-                                value={mood} 
-                                onChange={(e) => setMood(e.target.value)}
-                                disabled={isLoading}
-                            >
-                                {MOODS.map(m => (
-                                    <option key={m.value} value={m.value}>
-                                        {m.icon} {m.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                e('div', { className: 'controls', key: 'controls' }, [
+                    e('div', { className: 'control-group', key: 'mood-control' }, [
+                        e('label', { key: 'mood-label' }, [
+                            e('span', { className: 'mood-icon', key: 'mood-icon' }, MOODS.find(m => m.value === mood)?.icon),
+                            'Current Mood'
+                        ]),
+                        e('select', {
+                            key: 'mood-select',
+                            value: mood,
+                            onChange: (e) => setMood(e.target.value),
+                            disabled: isLoading
+                        }, MOODS.map(m => 
+                            e('option', { key: m.value, value: m.value }, `${m.icon} ${m.label}`)
+                        ))
+                    ]),
+                    
+                    e('div', { className: 'control-group', key: 'mode-control' }, [
+                        e('label', { key: 'mode-label' }, [
+                            e('span', { className: 'mode-icon', key: 'mode-icon' }, MODES.find(m => m.value === mode)?.icon),
+                            'Response Mode'
+                        ]),
+                        e('select', {
+                            key: 'mode-select',
+                            value: mode,
+                            onChange: (e) => setMode(e.target.value),
+                            disabled: isLoading
+                        }, MODES.map(m => 
+                            e('option', { key: m.value, value: m.value }, `${m.icon} ${m.label}`)
+                        )),
+                        e('div', { className: 'mode-description', key: 'mode-desc' }, getCurrentModeDescription())
+                    ]),
+                    
+                    e('button', {
+                        className: 'update-btn',
+                        key: 'update-btn',
+                        onClick: handleMoodModeChange,
+                        disabled: isLoading
+                    }, [
+                        e('span', { key: 'update-icon' }, '🔄'),
+                        'Update Settings'
+                    ])
+                ]),
+
+                e('div', { className: 'chat-container', key: 'chat-container' }, [
+                    e('div', { className: 'chat-messages', key: 'messages' }, [
+                        ...messages.map((message, index) => 
+                            e('div', { key: index, className: `message ${message.type}` }, [
+                                message.content,
+                                
+                                // Show feedback buttons for AI messages
+                                message.type === 'ai' && showFeedback === index && 
+                                e('div', { className: 'feedback-container', key: 'feedback' }, [
+                                    e('span', { className: 'feedback-label', key: 'feedback-label' }, 'Was this helpful?'),
+                                    e('button', {
+                                        className: 'feedback-btn helpful',
+                                        key: 'helpful-btn',
+                                        onClick: () => handleFeedback(index, 'helpful')
+                                    }, [
+                                        e('span', { key: 'helpful-icon' }, '👍'),
+                                        ' Helpful'
+                                    ]),
+                                    e('button', {
+                                        className: 'feedback-btn confused',
+                                        key: 'confused-btn',
+                                        onClick: () => handleFeedback(index, 'confused')
+                                    }, [
+                                        e('span', { key: 'confused-icon' }, '🤔'),
+                                        ' Confused'
+                                    ]),
+                                    e('button', {
+                                        className: 'feedback-btn unhelpful',
+                                        key: 'unhelpful-btn',
+                                        onClick: () => handleFeedback(index, 'unhelpful')
+                                    }, [
+                                        e('span', { key: 'unhelpful-icon' }, '👎'),
+                                        ' Not Helpful'
+                                    ])
+                                ])
+                            ])
+                        ),
                         
-                        <div className="control-group">
-                            <label>
-                                <span className="mode-icon">{MODES.find(m => m.value === mode)?.icon}</span>
-                                Response Mode
-                            </label>
-                            <select 
-                                value={mode} 
-                                onChange={(e) => setMode(e.target.value)}
-                                disabled={isLoading}
-                            >
-                                {MODES.map(m => (
-                                    <option key={m.value} value={m.value}>
-                                        {m.icon} {m.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="mode-description">
-                                {getCurrentModeDescription()}
-                            </div>
-                        </div>
+                        // Typing Indicator
+                        isLoading && e('div', { className: 'typing-indicator', key: 'typing' }, [
+                            e('span', { className: 'typing-text', key: 'typing-text' }, 'Thinking'),
+                            e('div', { className: 'typing-dots', key: 'typing-dots' }, [
+                                e('div', { className: 'typing-dot', key: 'dot1' }),
+                                e('div', { className: 'typing-dot', key: 'dot2' }),
+                                e('div', { className: 'typing-dot', key: 'dot3' })
+                            ])
+                        ]),
                         
-                        <button 
-                            className="update-btn"
-                            onClick={handleMoodModeChange}
-                            disabled={isLoading}
-                        >
-                            <span>🔄</span>
-                            Update Settings
-                        </button>
-                    </div>
+                        e('div', { ref: messagesEndRef, key: 'messages-end' })
+                    ]),
 
-                    <div className="chat-container">
-                        <div className="chat-messages">
-                            {messages.map((message, index) => (
-                                <div key={index} className={`message ${message.type}`}>
-                                    {message.content}
-                                    
-                                    {/* Show feedback buttons for AI messages */}
-                                    {message.type === 'ai' && showFeedback === index && (
-                                        <div className="feedback-container">
-                                            <span className="feedback-label">Was this helpful?</span>
-                                            <button 
-                                                className="feedback-btn helpful"
-                                                onClick={() => handleFeedback(index, 'helpful')}
-                                            >
-                                                <span>👍</span> Helpful
-                                            </button>
-                                            <button 
-                                                className="feedback-btn confused"
-                                                onClick={() => handleFeedback(index, 'confused')}
-                                            >
-                                                <span>🤔</span> Confused
-                                            </button>
-                                            <button 
-                                                className="feedback-btn unhelpful"
-                                                onClick={() => handleFeedback(index, 'unhelpful')}
-                                            >
-                                                <span>👎</span> Not Helpful
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                            
-                            {/* Typing Indicator */}
-                            {isLoading && (
-                                <div className="typing-indicator">
-                                    <span className="typing-text">Thinking</span>
-                                    <div className="typing-dots">
-                                        <div className="typing-dot"></div>
-                                        <div className="typing-dot"></div>
-                                        <div className="typing-dot"></div>
-                                    </div>
-                                </div>
-                            )}
-                            
-                            <div ref={messagesEndRef} />
-                        </div>
+                    e('div', { className: 'input-area', key: 'input-area' }, [
+                        // Prompt Suggestion
+                        showPromptSuggestion && e('div', {
+                            className: 'prompt-suggestion',
+                            key: 'prompt-suggestion',
+                            onClick: () => handlePromptSuggestionClick(getCurrentPromptSuggestion())
+                        }, [
+                            e('span', { key: 'suggestion-icon' }, '💭'),
+                            e('span', { key: 'suggestion-text' }, `Suggestion: "${getCurrentPromptSuggestion()}"`)
+                        ]),
+                        
+                        // Input Error
+                        inputError && e('div', { 
+                            className: 'message warning', 
+                            key: 'input-error',
+                            style: { marginBottom: '15px' } 
+                        }, `⚠️ ${inputError}`),
+                        
+                        e('div', { className: 'input-container', key: 'input-container' }, [
+                            e('div', { className: 'input-wrapper', key: 'input-wrapper' }, 
+                                e('textarea', {
+                                    key: 'textarea',
+                                    ref: inputRef,
+                                    value: inputText,
+                                    onChange: (e) => setInputText(e.target.value),
+                                    onKeyPress: handleKeyPress,
+                                    placeholder: `Share what's on your mind... (${2000 - inputText.length} characters left)`,
+                                    disabled: isLoading,
+                                    maxLength: 2000
+                                })
+                            ),
+                            e('button', {
+                                className: 'send-btn',
+                                key: 'send-btn',
+                                onClick: handleSendMessage,
+                                disabled: !inputText.trim() || isLoading || SafetyService.validateInput(inputText).length > 0
+                            }, [
+                                isLoading ? [
+                                    e('span', { key: 'loading-icon' }, '⏳'),
+                                    'Sending...'
+                                ] : [
+                                    e('span', { key: 'send-icon' }, '💌'),
+                                    'Send'
+                                ]
+                            ])
+                        ])
+                    ])
+                ]),
 
-                        <div className="input-area">
-                            {/* Prompt Suggestion */}
-                            {showPromptSuggestion && (
-                                <div 
-                                    className="prompt-suggestion"
-                                    onClick={() => handlePromptSuggestionClick(getCurrentPromptSuggestion())}
-                                >
-                                    <span>💭</span>
-                                    <span>Suggestion: "{getCurrentPromptSuggestion()}"</span>
-                                </div>
-                            )}
-                            
-                            {/* Input Error */}
-                            {inputError && (
-                                <div className="message warning" style={{marginBottom: '15px'}}>
-                                    ⚠️ {inputError}
-                                </div>
-                            )}
-                            
-                            <div className="input-container">
-                                <div className="input-wrapper">
-                                    <textarea
-                                        ref={inputRef}
-                                        value={inputText}
-                                        onChange={(e) => setInputText(e.target.value)}
-                                        onKeyPress={handleKeyPress}
-                                        placeholder={`Share what's on your mind... (${2000 - inputText.length} characters left)`}
-                                        disabled={isLoading}
-                                        maxLength={2000}
-                                    />
-                                </div>
-                                <button 
-                                    className="send-btn"
-                                    onClick={handleSendMessage}
-                                    disabled={!inputText.trim() || isLoading || SafetyService.validateInput(inputText).length > 0}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <span>⏳</span>
-                                            Sending...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span>💌</span>
-                                            Send
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="status-bar">
-                        <div className="status-left">
-                            <div className="status-item">
-                                <span style={{color: getStatusColor()}}>●</span>
-                                <span>
-                                    {connectionStatus === 'connected' && 'Connected'}
-                                    {connectionStatus === 'sending' && 'Sending...'}
-                                    {connectionStatus === 'error' && 'Connection Issue'}
-                                </span>
-                            </div>
-                            <div className="status-item">
-                                <span>🎭</span>
-                                <span>{MODES.find(m => m.value === mode)?.label}</span>
-                            </div>
-                            <div className="status-item">
-                                <span>{MOODS.find(m => m.value === mood)?.icon}</span>
-                                <span>{MOODS.find(m => m.value === mood)?.label}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <span>Session: {new Date().toLocaleTimeString()}</span>
-                        </div>
-                    </div>
-                </div>
-            );
+                e('div', { className: 'status-bar', key: 'status-bar' }, [
+                    e('div', { className: 'status-left', key: 'status-left' }, [
+                        e('div', { className: 'status-item', key: 'connection-status' }, [
+                            e('span', { key: 'status-dot', style: { color: getStatusColor() } }, '●'),
+                            e('span', { key: 'status-text' }, 
+                                connectionStatus === 'connected' ? 'Connected' :
+                                connectionStatus === 'sending' ? 'Sending...' :
+                                connectionStatus === 'error' ? 'Connection Issue' : ''
+                            )
+                        ]),
+                        e('div', { className: 'status-item', key: 'mode-status' }, [
+                            e('span', { key: 'mode-status-icon' }, '🎭'),
+                            e('span', { key: 'mode-status-text' }, MODES.find(m => m.value === mode)?.label)
+                        ]),
+                        e('div', { className: 'status-item', key: 'mood-status' }, [
+                            e('span', { key: 'mood-status-icon' }, MOODS.find(m => m.value === mood)?.icon),
+                            e('span', { key: 'mood-status-text' }, MOODS.find(m => m.value === mood)?.label)
+                        ])
+                    ]),
+                    e('div', { key: 'session-time' }, [
+                        e('span', {}, `Session: ${new Date().toLocaleTimeString()}`)
+                    ])
+                ])
+            ]);
         };
 
         // Render the app
-        ReactDOM.render(<App />, document.getElementById('root'));
+        if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+            ReactDOM.render(React.createElement(App), document.getElementById('root'));
+        } else {
+            document.getElementById('root').innerHTML = '<div style="padding: 20px; font-family: Arial; color: red; text-align: center;"><h2>Error Loading React</h2><p>Please refresh the page or check your internet connection.</p></div>';
+        }
     </script>
 </body>
 </html>
