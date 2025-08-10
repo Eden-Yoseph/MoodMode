@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Mode</title>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Updated Beige Color System */
+            --bg-beige: #F5F3F0;
+            --primary-teal: #3B9E9D;
+            --secondary-mauve: #C2A1A6;
+            --highlight-apricot: #F6B88F;
+            --text-primary: #2C2C2C;
+            --text-secondary: #6B7280;
+            --surface-cream: #FAF8F5;
+            --surface-soft: #F7F5F2;
+            --teal-glow: rgba(59, 158, 157, 0.08);
+            --teal-focus: rgba(59, 158, 157, 0.15);
+            --shadow-soft: rgba(0, 0, 0, 0.06);
+            --noise-overlay: rgba(0, 0, 0, 0.03);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 400;
+            background: var(--bg-beige);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ambient Background Layer */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(59, 158, 157, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(194, 161, 166, 0.04) 0%, transparent 50%);
+            animation: ambientShift 60s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes ambientShift {
+            0% { 
+                background: 
+                    radial-gradient(circle at 20% 80%, rgba(59, 158, 157, 0.03) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(194, 161, 166, 0.04) 0%, transparent 50%);
+            }
+            100% { 
+                background: 
+                    radial-gradient(circle at 25% 75%, rgba(59, 158, 157, 0.035) 0%, transparent 55%),
+                    radial-gradient(circle at 75% 25%, rgba(194, 161, 166, 0.045) 0%, transparent 55%);
+            }
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1000px;
+            height: 85vh;
+            background: var(--surface-cream);
+            border-radius: 24px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.08),
+                0 8px 24px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(245, 243, 240, 0.8);
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--surface-cream) 0%, var(--surface-soft) 100%);
+            padding: 32px 40px;
+            text-align: center;
+            border-bottom: 1px solid rgba(59, 158, 157, 0.08);
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-teal), transparent);
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        .controls {
+            padding: 28px 40px;
+            background: var(--surface-soft);
+            border-bottom: 1px solid rgba(59, 158, 157, 0.06);
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.01em;
+        }
+
+        .mood-icon, .mode-icon {
+            font-size: 1.1em;
+            filter: grayscale(20%);
+        }
+
+        select {
+            padding: 14px 16px;
+            border: 1.5px solid rgba(59, 158, 157, 0.12);
+            border-radius: 16px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            font-weight: 400;
+            background: var(--surface-cream);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            appearance: none;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%233B9E9D" stroke-width="1.5"><path d="M6 9l6 6 6-6"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 18px;
+            padding-right: 44px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        select:hover {
+            border-color: rgba(59, 158, 157, 0.25);
+            background-color: rgba(59, 158, 157, 0.02);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-teal);
+            box-shadow: 0 0 0 3px var(--teal-focus);
+            background-color: var(--surface-cream);
+        }
+
+        .update-btn {
+            background: linear-gradient(135deg, var(--primary-teal), rgba(59, 158, 157, 0.9));
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            font-family: inherit;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            height: fit-content;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(59, 158, 157, 0.25);
+            letter-spacing: 0.01em;
+            -webkit-font-smoothing: antialiased;
+            align-self: end;
+        }
+
+        .update-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 158, 157, 0.35);
+            background: linear-gradient(135deg, #45A8A7, var(--primary-teal));
+        }
+
+        .update-btn:focus {
+            outline: none;
+            box-shadow: 
+                0 6px 20px rgba(59, 158, 157, 0.35),
+                0 0 0 3px var(--teal-focus);
+        }
+
+        .update-btn:active {
+            transform: translateY(0);
+        }
+
+        .update-btn:disabled {
+            background: #B0B0B0;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .mode-description {
+            font-size: 0.8rem;
+            color: var(--secondary-mauve);
+            font-style: italic;
+            margin-top: 6px;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-beige);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 32px 40px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(59, 158, 157, 0.2);
+            border-radius: 2px;
+        }
+
+        .message {
+            max-width: 65%;
+            padding: 18px 22px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            font-weight: 400;
+            position: relative;
+            word-wrap: break-word;
+            animation: messageRise 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        @keyframes messageRise {
+            from { 
+                opacity: 0; 
+                transform: translateY(2px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .message.user {
+            background: linear-gradient(180deg, var(--surface-cream), var(--surface-soft));
+            color: var(--text-primary);
+            align-self: flex-end;
+            border-radius: 20px 20px 6px 20px;
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.04),
+                0 1px 3px rgba(0, 0, 0, 0.06);
+            border: 0.5px solid rgba(59, 158, 157, 0.08);
+        }
+
+        .message.ai {
+            background: var(--surface-cream);
+            color: var(--text-primary);
+            align-self: flex-start;
+            border-radius: 20px 20px 20px 6px;
+            box-shadow: 
+                0 0 0 2px var(--teal-glow),
+                0 4px 12px rgba(0, 0, 0, 0.06),
+                0 2px 4px rgba(0, 0, 0, 0.04);
+            border: none;
+            position: relative;
+        }
+
+        .message.ai::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            background: linear-gradient(135deg, var(--primary-teal), var(--secondary-mauve));
+            border-radius: inherit;
+            opacity: 0.08;
+            z-index: -1;
+        }
+
+        .message.system {
+            background: linear-gradient(135deg, rgba(246, 184, 143, 0.1), rgba(246, 184, 143, 0.05));
+            color: var(--text-secondary);
+            align-self: center;
+            text-align: center;
+            font-size: 0.875rem;
+            font-weight: 400;
+            border: 1px solid rgba(246, 184, 143, 0.2);
+            border-radius: 16px;
+            max-width: 85%;
+            font-style: italic;
+        }
+
+        .message.warning {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.08), rgba(220, 53, 69, 0.04));
+            color: #B91C1C;
+            align-self: center;
+            text-align: center;
+            font-weight: 500;
+            border: 1px solid rgba(220, 53, 69, 0.15);
+            border-radius: 16px;
+            max-width: 85%;
+        }
+
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 22px;
+            background: var(--surface-cream);
+            border-radius: 20px 20px 20px 6px;
+            max-width: 140px;
+            align-self: flex-start;
+            box-shadow: 
+                0 0 0 2px var(--teal-glow),
+                0 4px 12px rgba(0, 0, 0, 0.06);
+            animation: messageRise 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .typing-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 5px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--primary-teal);
+            border-radius: 50%;
+            animation: breathingDots 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            opacity: 0.4;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes breathingDots {
+            0%, 60%, 100% { 
+                transform: scale(0.8); 
+                opacity: 0.4; 
+            }
+            30% { 
+                transform: scale(1.1); 
+                opacity: 0.9; 
+            }
+        }
+
+        .input-area {
+            padding: 28px 40px 32px;
+            background: var(--surface-cream);
+            border-top: 1px solid rgba(59, 158, 157, 0.06);
+        }
+
+        .prompt-suggestion {
+            margin-bottom: 18px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(59, 158, 157, 0.06), rgba(59, 158, 157, 0.03));
+            border: 1px solid rgba(59, 158, 157, 0.12);
+            border-radius: 18px;
+            font-size: 0.875rem;
+            color: var(--primary-teal);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .prompt-suggestion:hover {
+            background: linear-gradient(135deg, rgba(59, 158, 157, 0.1), rgba(59, 158, 157, 0.05));
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 158, 157, 0.15);
+            border-color: rgba(59, 158, 157, 0.2);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            position: relative;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-teal);
+            font-size: 1.1rem;
+            opacity: 0.6;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 56px;
+            max-height: 120px;
+            padding: 18px 20px 18px 50px;
+            border: 1.5px solid rgba(59, 158, 157, 0.12);
+            border-radius: 28px;
+            resize: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 400;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--surface-cream);
+            color: var(--text-primary);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.04),
+                inset 0 1px 2px rgba(0, 0, 0, 0.02);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        textarea:hover {
+            border-color: rgba(59, 158, 157, 0.2);
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.06),
+                inset 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-teal);
+            box-shadow: 
+                0 0 0 3px var(--teal-focus),
+                0 4px 12px rgba(0, 0, 0, 0.06),
+                inset 0 1px 2px rgba(0, 0, 0, 0.02);
+            background: var(--surface-cream);
+        }
+
+        textarea::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, var(--primary-teal), rgba(59, 158, 157, 0.9));
+            color: white;
+            border: none;
+            padding: 18px 28px;
+            border-radius: 28px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 100px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 
+                0 4px 12px rgba(59, 158, 157, 0.25),
+                0 2px 4px rgba(59, 158, 157, 0.15);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 
+                0 6px 20px rgba(59, 158, 157, 0.35),
+                0 4px 8px rgba(59, 158, 157, 0.2);
+            background: linear-gradient(135deg, #45A8A7, var(--primary-teal));
+        }
+
+        .send-btn:focus {
+            outline: none;
+            box-shadow: 
+                0 6px 20px rgba(59, 158, 157, 0.35),
+                0 0 0 3px var(--teal-focus);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        .send-btn:disabled {
+            background: #B0B0B0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .feedback-container {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 16px;
+            padding: 14px 18px;
+            background: rgba(59, 158, 157, 0.03);
+            border-radius: 14px;
+            animation: messageRise 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(59, 158, 157, 0.08);
+        }
+
+        .feedback-label {
+            font-size: 0.825rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .feedback-btn {
+            padding: 8px 14px;
+            border: 1.5px solid transparent;
+            background: var(--surface-cream);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            font-family: inherit;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .feedback-btn.helpful {
+            border-color: #10B981;
+            color: #059669;
+        }
+
+        .feedback-btn.helpful:hover {
+            background: #10B981;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        .feedback-btn.confused {
+            border-color: var(--highlight-apricot);
+            color: #D97706;
+        }
+
+        .feedback-btn.confused:hover {
+            background: var(--highlight-apricot);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(246, 184, 143, 0.25);
+        }
+
+        .feedback-btn.unhelpful {
+            border-color: #EF4444;
+            color: #DC2626;
+        }
+
+        .feedback-btn.unhelpful:hover {
+            background: #EF4444;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+        }
+
+        .status-bar {
+            padding: 14px 40px;
+            background: linear-gradient(135deg, var(--surface-soft), rgba(247, 245, 242, 0.8));
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(59, 158, 157, 0.06);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .status-left {
+            display: flex;
+            gap: 24px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-weight: 400;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .app-container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 24px 24px;
+            }
+
+            .header, .chat-messages, .input-area {
+                padding-left: 24px;
+                padding-right: 24px;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+
+            .input-container {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .send-btn {
+                align-self: stretch;
+                min-width: auto;
+            }
+
+            .status-bar {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+                padding: 12px 24px;
+            }
+
+            .status-left {
+                justify-content: center;
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .header .subtitle {
+                font-size: 0.875rem;
+            }
+
+            .chat-messages {
+                gap: 20px;
+                padding: 24px 20px;
+            }
+
+            .input-area {
+                padding: 20px;
+            }
+
+            textarea {
+                padding-left: 44px;
+            }
+
+            .input-icon {
+                left: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        // Check if React loaded properly
+        if (typeof React === 'undefined') {
+            document.body.innerHTML = '<div style="padding: 20px; font-family: Manrope, Arial; color: red; text-align: center;"><h2>Loading React...</h2><p>If this message persists, there may be a network issue. Please refresh the page.</p></div>';
+            console.error('React failed to load from CDN');
+        } else {
+            console.log('React loaded successfully');
+        }
+
+        // Import React hooks
+        const { useState, useEffect, useRef, createElement: e } = React;
+
+        // Enhanced Configuration Constants with Simpler Language
+        const MOODS = [
+            { value: 'calm', label: 'Calm', icon: '😌' },
+            { value: 'thinking', label: 'Thinking', icon: '🤔' },
+            { value: 'sensitive', label: 'Sensitive', icon: '🌸' },
+            { value: 'restless', label: 'Restless', icon: '🌀' },
+            { value: 'sad', label: 'Sad', icon: '😔' },
+            { value: 'overwhelmed', label: 'Overwhelmed', icon: '😵' },
+            { value: 'curious', label: 'Curious', icon: '🔍' },
+            { value: 'hopeful', label: 'Hopeful', icon: '🌟' },
+            { value: 'motivated', label: 'Motivated', icon: '💪' },
+            { value: 'tired', label: 'Tired', icon: '😴' }
+        ];
+
+        const MODES = [
+            { 
+                value: 'supportive', 
+                label: 'Supportive', 
+                icon: '🤝',
+                description: 'Understanding and encouraging responses'
+            },
+            { 
+                value: 'analytical', 
+                label: 'Analytical', 
+                icon: '🧠',
+                description: 'Thoughtful analysis of your situation'
+            },
+            { 
+                value: 'practical', 
+                label: 'Practical', 
+                icon: '🛠️',
+                description: 'Action-oriented suggestions and solutions'
+            },
+            { 
+                value: 'exploratory', 
+                label: 'Exploratory', 
+                icon: '💡',
+                description: 'Questions to help you think deeper'
+            },
+            { 
+                value: 'calming', 
+                label: 'Calming', 
+                icon: '🧘',
+                description: 'Relaxing and stress-reducing approaches'
+            },
+            { 
+                value: 'motivational', 
+                label: 'Motivational', 
+                icon: '🚀',
+                description: 'Encouraging forward progress and growth'
+            }
+        ];
+
+        // Contextual Prompts for Different Moods
+        const CONTEXTUAL_PROMPTS = {
+            'calm-supportive': "What's going well in your life right now?",
+            'calm-analytical': "How are you maintaining this sense of balance?",
+            'thinking-exploratory': "What's been on your mind lately?",
+            'thinking-analytical': "What problem are you trying to work through?",
+            'sensitive-supportive': "What do you need support with today?",
+            'sensitive-calming': "What would help you feel more at ease?",
+            'restless-practical': "What action might help with this restless feeling?",
+            'restless-motivational': "Where would you like to direct this energy?",
+            'sad-supportive': "What's weighing on your heart today?",
+            'sad-calming': "What small thing might bring you some comfort?",
+            'overwhelmed-practical': "What's one thing you could tackle first?",
+            'overwhelmed-calming': "Let's break this down into smaller pieces...",
+            'curious-exploratory': "What would you like to learn or understand?",
+            'curious-analytical': "What topic has captured your interest?",
+            'hopeful-motivational': "What positive change are you working toward?",
+            'hopeful-supportive': "What's giving you hope right now?",
+            'motivated-practical': "What goal would you like to focus on?",
+            'motivated-motivational': "What's driving your motivation today?",
+            'tired-calming': "What would help you recharge?",
+            'tired-supportive': "What's been draining your energy?"
+        };
+
+        // Safety Keywords
+        const SAFETY_KEYWORDS = [
+            'disappear', 'vanish', 'fade away', 'not exist', 'invisible',
+            'unbearable', 'can\'t handle', 'breaking apart', 'falling apart',
+            'lost forever', 'no way out', 'trapped', 'suffocating',
+            'worthless', 'burden', 'mistake', 'should never', 'hate myself'
+        ];
+
+        // Enhanced API Service with Practical Responses
+        const PracticalAPI = {
+            modePrompts: {
+                supportive: "You are a caring, understanding companion. Offer warm, empathetic responses that validate feelings and provide emotional support. Use phrases like 'That sounds difficult', 'I understand why you'd feel that way', 'You're not alone in this'.",
+                
+                analytical: "You are a thoughtful analyst helping someone understand their situation. Break down complex feelings or situations into understandable parts. Use phrases like 'Let's look at this step by step', 'What I'm hearing is...', 'The pattern I notice is...'.",
+                
+                practical: "You are a solution-focused helper offering concrete, actionable advice. Suggest specific steps and strategies. Use phrases like 'Here's what you could try', 'A practical first step might be', 'Have you considered...'.",
+                
+                exploratory: "You are a curious guide helping someone think deeper. Ask thoughtful questions that lead to insight. Use 'What do you think might happen if...', 'How does that connect to...', 'What would it look like if...'.",
+                
+                calming: "You are a soothing presence offering stress relief and relaxation techniques. Suggest breathing exercises, mindfulness, or calming activities. Use gentle, peaceful language and practical relaxation tips.",
+                
+                motivational: "You are an encouraging coach focused on growth and positive action. Help build confidence and momentum. Use phrases like 'You've got this', 'Here's how you can move forward', 'What progress have you already made?'."
+            },
+
+            async sendMessage(text, mood, mode, conversationHistory = []) {
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1500));
+                    
+                    const response = this.generatePracticalResponse(text, mood, mode, conversationHistory);
+                    
+                    return {
+                        response: response,
+                        mood: mood,
+                        mode: mode,
+                        timestamp: new Date().toISOString(),
+                        tokens_used: Math.floor(Math.random() * 100) + 30
+                    };
+                } catch (error) {
+                    throw new Error('Connection interrupted. Please try again.');
+                }
+            },
+
+            generatePracticalResponse(text, mood, mode, history) {
+                const responses = {
+                    supportive: [
+                        `I can hear that you're feeling ${mood} right now, and that's completely valid.`,
+                        `It makes sense that you'd feel ${mood} about this situation.`,
+                        `Thank you for sharing this with me while you're feeling ${mood}.`,
+                        `Your ${mood} feelings are important and deserve attention.`
+                    ],
+                    
+                    analytical: [
+                        `Looking at your ${mood} state, I notice there might be several factors at play here.`,
+                        `When someone feels ${mood}, it often connects to specific triggers or patterns.`,
+                        `Your ${mood} feeling seems to be telling us something important about your situation.`,
+                        `Let's break down what might be contributing to feeling ${mood} right now.`
+                    ],
+                    
+                    practical: [
+                        `Since you're feeling ${mood}, here are some concrete steps that might help.`,
+                        `When dealing with ${mood} feelings, I've found these approaches can be effective.`,
+                        `Let's focus on what you can actually do about feeling ${mood} today.`,
+                        `There are specific strategies that work well for managing ${mood} feelings.`
+                    ],
+                    
+                    exploratory: [
+                        `What do you think might be behind this ${mood} feeling?`,
+                        `How long have you been aware of feeling ${mood} about this?`,
+                        `What does feeling ${mood} tell you about what you value or need?`,
+                        `If this ${mood} feeling could speak, what would it say?`
+                    ],
+                    
+                    calming: [
+                        `I notice you're feeling ${mood}. Let's take a moment to slow down and breathe.`,
+                        `When you feel ${mood} like this, what usually helps you feel more settled?`,
+                        `It's okay to feel ${mood}. What would bring you some peace right now?`,
+                        `This ${mood} feeling will pass. What helps you feel grounded?`
+                    ],
+                    
+                    motivational: [
+                        `Even though you're feeling ${mood}, I can see your strength in reaching out.`,
+                        `Feeling ${mood} is part of your journey toward something better.`,
+                        `What small step forward feels possible even while feeling ${mood}?`,
+                        `You've handled ${mood} feelings before and grown from them.`
+                    ]
+                };
+
+                const modeResponses = responses[mode] || responses.supportive;
+                let baseResponse = modeResponses[Math.floor(Math.random() * modeResponses.length)];
+                
+                // Add contextual continuity from conversation history
+                if (history.length > 1) {
+                    const continuityPhrases = [
+                        "Building on what you shared, ",
+                        "Thinking about our conversation, ",
+                        "Connecting this to what you mentioned, "
+                    ];
+                    
+                    if (Math.random() > 0.6) {
+                        const phrase = continuityPhrases[Math.floor(Math.random() * continuityPhrases.length)];
+                        baseResponse = phrase + baseResponse.toLowerCase();
+                    }
+                }
+                
+                return baseResponse;
+            }
+        };
+
+        // Enhanced Safety Service
+        const SafetyService = {
+            detectConcern(text) {
+                const normalizedText = text.toLowerCase();
+                return SAFETY_KEYWORDS.some(keyword => normalizedText.includes(keyword));
+            },
+
+            validateInput(text) {
+                const errors = [];
+                
+                if (!text || text.trim().length === 0) {
+                    errors.push('Your message is empty');
+                }
+                
+                if (text.length > 1500) {
+                    errors.push('Message is too long - please keep it under 1500 characters');
+                }
+                
+                return errors;
+            },
+
+            generateSafetyResponse() {
+                const responses = [
+                    "I can hear that you're going through something really difficult. These feelings are important and deserve professional support. Would you consider reaching out to a counselor or therapist who can provide specialized help?",
+                    "What you're experiencing sounds very challenging. While I'm here to listen, a trained mental health professional would be better equipped to support you through this. Have you thought about speaking with someone?",
+                    "I'm concerned about what you're sharing and want to make sure you get the right kind of support. Would it be possible for you to talk with a counselor, therapist, or trusted person in your life?"
+                ];
+                
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+        };
+
+        // Enhanced Storage with Session Analytics
+        const SessionStorage = {
+            saveSession(data) {
+                try {
+                    const sessions = this.getSessions();
+                    sessions.push({
+                        ...data,
+                        id: data.id || Date.now(),
+                        timestamp: new Date().toISOString()
+                    });
+                    localStorage.setItem('aiChatSessions', JSON.stringify(sessions.slice(-50))); // Keep last 50 sessions
+                } catch (error) {
+                    console.warn('Unable to save session data');
+                }
+            },
+
+            getSessions() {
+                try {
+                    const sessions = localStorage.getItem('aiChatSessions');
+                    return sessions ? JSON.parse(sessions) : [];
+                } catch (error) {
+                    console.warn('Session storage corrupted, clearing...');
+                    localStorage.removeItem('aiChatSessions');
+                    return [];
+                }
+            },
+
+            saveFeedback(sessionId, messageIndex, feedback) {
+                try {
+                    const sessions = this.getSessions();
+                    const session = sessions.find(s => s.id === sessionId);
+                    if (session) {
+                        session.feedback = session.feedback || {};
+                        session.feedback[messageIndex] = {
+                            type: feedback,
+                            timestamp: new Date().toISOString()
+                        };
+                        localStorage.setItem('aiChatSessions', JSON.stringify(sessions));
+                    }
+                } catch (error) {
+                    console.warn('Unable to save feedback');
+                }
+            }
+        };
+
+        // Main AI Companion Component
+        const AICompanion = () => {
+            // Core State
+            const [mood, setMood] = useState('thinking');
+            const [mode, setMode] = useState('supportive');
+            const [messages, setMessages] = useState([]);
+            const [inputText, setInputText] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [sessionId] = useState(() => Date.now());
+            
+            // UI State
+            const [showPromptSuggestion, setShowPromptSuggestion] = useState(false);
+            const [idleTimer, setIdleTimer] = useState(null);
+            const [showFeedback, setShowFeedback] = useState(null);
+            const [inputError, setInputError] = useState('');
+            const [connectionStatus, setConnectionStatus] = useState('connected');
+
+            // Refs
+            const messagesEndRef = useRef(null);
+            const inputRef = useRef(null);
+
+            // Auto-scroll with smooth behavior
+            useEffect(() => {
+                if (messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'end'
+                    });
+                }
+            }, [messages]);
+
+            // Initialize session
+            useEffect(() => {
+                if (!sessionStorage.getItem('session_id')) {
+                    sessionStorage.setItem('session_id', sessionId.toString());
+                }
+
+                const welcomeMessage = {
+                    type: 'system',
+                    content: `Welcome! I'm here to provide ${MODES.find(m => m.value === mode)?.label.toLowerCase()} responses, especially when you're feeling ${mood}. What's on your mind?`,
+                    timestamp: new Date().toISOString()
+                };
+                setMessages([welcomeMessage]);
+            }, []);
+
+            // Idle detection for contextual prompts
+            useEffect(() => {
+                if (idleTimer) {
+                    clearTimeout(idleTimer);
+                }
+                
+                if (inputText.trim() === '' && messages.length > 1) {
+                    const timer = setTimeout(() => {
+                        setShowPromptSuggestion(true);
+                    }, 8000);
+                    setIdleTimer(timer);
+                } else {
+                    setShowPromptSuggestion(false);
+                }
+
+                return () => {
+                    if (idleTimer) clearTimeout(idleTimer);
+                };
+            }, [inputText, messages.length]);
+
+            // Clear errors when typing
+            useEffect(() => {
+                if (inputError && inputText.trim().length > 0) {
+                    setInputError('');
+                }
+            }, [inputText, inputError]);
+
+            const handleMoodModeUpdate = () => {
+                const moodLabel = MOODS.find(m => m.value === mood)?.label;
+                const modeLabel = MODES.find(m => m.value === mode)?.label;
+                const modeDescription = MODES.find(m => m.value === mode)?.description;
+                
+                const updateMessage = {
+                    type: 'system',
+                    content: `I've updated to ${modeLabel.toLowerCase()} mode (${modeDescription.toLowerCase()}) for when you're feeling ${moodLabel.toLowerCase()}. How can I help?`,
+                    timestamp: new Date().toISOString()
+                };
+
+                setMessages(prev => [...prev, updateMessage]);
+                setShowFeedback(null);
+                
+                SessionStorage.saveSession({
+                    id: sessionId,
+                    mood: mood,
+                    mode: mode,
+                    action: 'settings_update',
+                    messageCount: messages.length
+                });
+            };
+
+            const handleSendMessage = async () => {
+                const userMessage = inputText.trim();
+                
+                const validationErrors = SafetyService.validateInput(userMessage);
+                if (validationErrors.length > 0) {
+                    setInputError(validationErrors[0]);
+                    return;
+                }
+
+                if (isLoading) return;
+
+                setInputText('');
+                setShowPromptSuggestion(false);
+                setInputError('');
+                
+                const userMessageObj = {
+                    type: 'user',
+                    content: userMessage,
+                    timestamp: new Date().toISOString()
+                };
+                setMessages(prev => [...prev, userMessageObj]);
+                
+                // Safety check
+                if (SafetyService.detectConcern(userMessage)) {
+                    const safetyResponse = {
+                        type: 'warning',
+                        content: SafetyService.generateSafetyResponse(),
+                        timestamp: new Date().toISOString()
+                    };
+                    setMessages(prev => [...prev, safetyResponse]);
+                    return;
+                }
+
+                setIsLoading(true);
+                setConnectionStatus('processing');
+
+                try {
+                    const conversationHistory = messages
+                        .filter(m => m.type === 'user' || m.type === 'ai')
+                        .slice(-6);
+                    
+                    const response = await PracticalAPI.sendMessage(userMessage, mood, mode, conversationHistory);
+                    
+                    const aiMessageObj = {
+                        type: 'ai',
+                        content: response.response,
+                        timestamp: response.timestamp,
+                        metadata: {
+                            tokens: response.tokens_used,
+                            mode: response.mode,
+                            mood: response.mood
+                        }
+                    };
+                    
+                    setMessages(prev => [...prev, aiMessageObj]);
+                    setShowFeedback(messages.length + 1);
+                    setConnectionStatus('connected');
+                    
+                    SessionStorage.saveSession({
+                        id: sessionId,
+                        mood: mood,
+                        mode: mode,
+                        userMessage: userMessage,
+                        aiResponse: response.response,
+                        messageCount: messages.length + 2
+                    });
+                    
+                } catch (error) {
+                    console.error('Message error:', error);
+                    setConnectionStatus('interrupted');
+                    
+                    const errorMessage = {
+                        type: 'system',
+                        content: error.message,
+                        timestamp: new Date().toISOString()
+                    };
+                    setMessages(prev => [...prev, errorMessage]);
+                    
+                } finally {
+                    setIsLoading(false);
+                    setTimeout(() => setConnectionStatus('connected'), 3000);
+                }
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                }
+            };
+
+            const handlePromptSuggestionClick = (suggestion) => {
+                setInputText(suggestion);
+                setShowPromptSuggestion(false);
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            };
+
+            const handleFeedback = (messageIndex, feedbackType) => {
+                SessionStorage.saveFeedback(sessionId, messageIndex, feedbackType);
+                setShowFeedback(null);
+                
+                const feedbackMessages = {
+                    'helpful': 'Thank you for the feedback! I\'m glad that was helpful.',
+                    'confused': 'Thanks for letting me know. Let me try a different approach.',
+                    'unhelpful': 'I appreciate the honesty. What would have been more helpful?'
+                };
+
+                const feedbackMessage = {
+                    type: 'system',
+                    content: feedbackMessages[feedbackType],
+                    timestamp: new Date().toISOString()
+                };
+
+                setTimeout(() => {
+                    setMessages(prev => [...prev, feedbackMessage]);
+                }, 800);
+            };
+
+            const getCurrentContextualPrompt = () => {
+                const key = `${mood}-${mode}`;
+                const specificPrompt = CONTEXTUAL_PROMPTS[key];
+                
+                if (specificPrompt) {
+                    return specificPrompt;
+                }
+                
+                // Fallback to mood-based prompts
+                const moodFallbacks = {
+                    'calm': "What's bringing you peace today?",
+                    'thinking': "What's been on your mind?",
+                    'sensitive': "What's feeling tender right now?",
+                    'restless': "What's got you feeling restless?",
+                    'sad': "What's weighing on you?",
+                    'overwhelmed': "What feels like too much right now?",
+                    'curious': "What would you like to explore?",
+                    'hopeful': "What are you hopeful about?",
+                    'motivated': "What's driving your motivation?",
+                    'tired': "What's been draining your energy?"
+                };
+                
+                return moodFallbacks[mood] || "What's on your mind today?";
+            };
+
+            const getStatusIndicator = () => {
+                switch (connectionStatus) {
+                    case 'connected': return { color: 'var(--primary-teal)', text: 'Ready' };
+                    case 'processing': return { color: 'var(--highlight-apricot)', text: 'Thinking...' };
+                    case 'interrupted': return { color: '#EF4444', text: 'Reconnecting' };
+                    default: return { color: 'var(--text-secondary)', text: 'Connecting' };
+                }
+            };
+
+            const status = getStatusIndicator();
+
+            return e('div', { className: 'app-container' }, [
+                // Header
+                e('div', { className: 'header', key: 'header' }, [
+                    e('h1', { key: 'title' }, 'Mood Mode'),
+                    e('p', { className: 'subtitle', key: 'subtitle' }, 'Helpful conversations tailored to your mood and needs')
+                ]),
+
+                // Controls
+                e('div', { className: 'controls', key: 'controls' }, [
+                    e('div', { className: 'control-group', key: 'mood-control' }, [
+                        e('label', { key: 'mood-label' }, [
+                            e('span', { className: 'mood-icon', key: 'mood-icon' }, MOODS.find(m => m.value === mood)?.icon),
+                            'Current Mood'
+                        ]),
+                        e('select', {
+                            key: 'mood-select',
+                            value: mood,
+                            onChange: (e) => setMood(e.target.value),
+                            disabled: isLoading
+                        }, MOODS.map(m => 
+                            e('option', { key: m.value, value: m.value }, `${m.icon} ${m.label}`)
+                        ))
+                    ]),
+                    
+                    e('div', { className: 'control-group', key: 'mode-control' }, [
+                        e('label', { key: 'mode-label' }, [
+                            e('span', { className: 'mode-icon', key: 'mode-icon' }, MODES.find(m => m.value === mode)?.icon),
+                            'Response Mode'
+                        ]),
+                        e('select', {
+                            key: 'mode-select',
+                            value: mode,
+                            onChange: (e) => setMode(e.target.value),
+                            disabled: isLoading
+                        }, MODES.map(m => 
+                            e('option', { key: m.value, value: m.value }, `${m.icon} ${m.label}`)
+                        )),
+                        e('div', { className: 'mode-description', key: 'mode-desc' }, 
+                            MODES.find(m => m.value === mode)?.description
+                        )
+                    ]),
+                    
+                    e('button', {
+                        className: 'update-btn',
+                        key: 'update-btn',
+                        onClick: handleMoodModeUpdate,
+                        disabled: isLoading
+                    }, [
+                        e('span', { key: 'update-icon' }, '✨'),
+                        'Update'
+                    ])
+                ]),
+
+                // Chat Container
+                e('div', { className: 'chat-container', key: 'chat-container' }, [
+                    e('div', { className: 'chat-messages', key: 'messages' }, [
+                        ...messages.map((message, index) => 
+                            e('div', { key: index, className: `message ${message.type}` }, [
+                                message.content,
+                                
+                                // Feedback for AI messages
+                                message.type === 'ai' && showFeedback === index && 
+                                e('div', { className: 'feedback-container', key: 'feedback' }, [
+                                    e('span', { className: 'feedback-label', key: 'feedback-label' }, 'How was this response?'),
+                                    e('button', {
+                                        className: 'feedback-btn helpful',
+                                        key: 'helpful-btn',
+                                        onClick: () => handleFeedback(index, 'helpful')
+                                    }, [
+                                        e('span', { key: 'helpful-icon' }, '👍'),
+                                        'Helpful'
+                                    ]),
+                                    e('button', {
+                                        className: 'feedback-btn confused',
+                                        key: 'confused-btn',
+                                        onClick: () => handleFeedback(index, 'confused')
+                                    }, [
+                                        e('span', { key: 'confused-icon' }, '🤔'),
+                                        'Confusing'
+                                    ]),
+                                    e('button', {
+                                        className: 'feedback-btn unhelpful',
+                                        key: 'unhelpful-btn',
+                                        onClick: () => handleFeedback(index, 'unhelpful')
+                                    }, [
+                                        e('span', { key: 'unhelpful-icon' }, '👎'),
+                                        'Not helpful'
+                                    ])
+                                ])
+                            ])
+                        ),
+                        
+                        // Typing indicator
+                        isLoading && e('div', { className: 'typing-indicator', key: 'typing' }, [
+                            e('span', { className: 'typing-text', key: 'typing-text' }, 'Thinking'),
+                            e('div', { className: 'typing-dots', key: 'typing-dots' }, [
+                                e('div', { className: 'typing-dot', key: 'dot1' }),
+                                e('div', { className: 'typing-dot', key: 'dot2' }),
+                                e('div', { className: 'typing-dot', key: 'dot3' })
+                            ])
+                        ]),
+                        
+                        e('div', { ref: messagesEndRef, key: 'messages-end' })
+                    ]),
+
+                    // Input Area
+                    e('div', { className: 'input-area', key: 'input-area' }, [
+                        // Contextual prompt suggestion
+                        showPromptSuggestion && e('div', {
+                            className: 'prompt-suggestion',
+                            key: 'prompt-suggestion',
+                            onClick: () => handlePromptSuggestionClick(getCurrentContextualPrompt())
+                        }, [
+                            e('span', { key: 'suggestion-icon' }, '💭'),
+                            e('span', { key: 'suggestion-text' }, `"${getCurrentContextualPrompt()}"`)
+                        ]),
+                        
+                        // Input error
+                        inputError && e('div', { 
+                            className: 'message warning', 
+                            key: 'input-error',
+                            style: { marginBottom: '16px', fontSize: '0.85rem' } 
+                        }, `${inputError}`),
+                        
+                        // Input container
+                        e('div', { className: 'input-container', key: 'input-container' }, [
+                            e('div', { className: 'input-wrapper', key: 'input-wrapper' }, [
+                                e('div', { className: 'input-icon', key: 'input-icon' }, '💬'),
+                                e('textarea', {
+                                    key: 'textarea',
+                                    ref: inputRef,
+                                    value: inputText,
+                                    onChange: (e) => setInputText(e.target.value),
+                                    onKeyPress: handleKeyPress,
+                                    placeholder: inputText.length === 0 ? "What's on your mind?" : `${1500 - inputText.length} characters left`,
+                                    disabled: isLoading,
+                                    maxLength: 1500
+                                })
+                            ]),
+                            e('button', {
+                                className: 'send-btn',
+                                key: 'send-btn',
+                                onClick: handleSendMessage,
+                                disabled: !inputText.trim() || isLoading || SafetyService.validateInput(inputText).length > 0
+                            }, [
+                                isLoading ? [
+                                    e('span', { key: 'loading-icon' }, '⏳'),
+                                    'Thinking...'
+                                ] : [
+                                    e('span', { key: 'send-icon' }, '✈️'),
+                                    'Send'
+                                ]
+                            ])
+                        ])
+                    ])
+                ]),
+
+                // Status Bar
+                e('div', { className: 'status-bar', key: 'status-bar' }, [
+                    e('div', { className: 'status-left', key: 'status-left' }, [
+                        e('div', { className: 'status-item', key: 'connection-status' }, [
+                            e('div', { 
+                                className: 'status-dot', 
+                                key: 'status-dot', 
+                                style: { backgroundColor: status.color }
+                            }),
+                            e('span', { key: 'status-text' }, status.text)
+                        ]),
+                        e('div', { className: 'status-item', key: 'mode-status' }, [
+                            e('span', { key: 'mode-status-icon' }, MODES.find(m => m.value === mode)?.icon),
+                            e('span', { key: 'mode-status-text' }, MODES.find(m => m.value === mode)?.label)
+                        ]),
+                        e('div', { className: 'status-item', key: 'mood-status' }, [
+                            e('span', { key: 'mood-status-icon' }, MOODS.find(m => m.value === mood)?.icon),
+                            e('span', { key: 'mood-status-text' }, MOODS.find(m => m.value === mood)?.label)
+                        ])
+                    ]),
+                    e('div', { key: 'session-time' }, [
+                        e('span', {}, `Session: ${new Date().toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                        })}`)
+                    ])
+                ])
+            ]);
+        };
+
+        // Initialize the AI companion application
+        if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+            ReactDOM.render(React.createElement(AICompanion), document.getElementById('root'));
+        } else {
+            document.getElementById('root').innerHTML = `
+                <div style="
+                    padding: 40px; 
+                    font-family: Manrope, Arial, sans-serif; 
+                    color: #DC2626; 
+                    text-align: center;
+                    background: #F5F3F0;
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                ">
+                    <h2 style="color: #3B9E9D; margin-bottom: 16px;">Connection Issue</h2>
+                    <p style="color: #6B7280; margin-bottom: 24px;">Unable to load the AI interface.</p>
+                    <p style="font-size: 0.9rem; color: #9CA3AF;">Please refresh the page or check your connection.</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
